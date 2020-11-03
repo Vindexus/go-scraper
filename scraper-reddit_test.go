@@ -1,4 +1,4 @@
-package main
+package vinscraper
 
 import (
 	"github.com/Monstercat/golib/expectm"
