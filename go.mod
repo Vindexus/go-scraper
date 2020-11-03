@@ -1,4 +1,4 @@
-module github.com/altrudos/scraper
+module github.com/Vindexus/go-scraper
 
 go 1.14
 
