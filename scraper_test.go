@@ -1,7 +1,7 @@
 package vinscraper
 
 import (
-	"github.com/Monstercat/golib/expectm"
+	"github.com/monstercat/golib/expectm"
 	"github.com/pkg/errors"
 )
 
@@ -22,16 +22,15 @@ func (st *ScrapeTest) Run() error {
 		return errors.New("Test wanted scraper to NOT want " + st.URL + " but it DID")
 	}
 
-	res, err := st.Scraper.Scrape(st.URL)
 
-	if err != st.ExpectedError {
-		if st.ExpectedError == nil {
-			return errors.Errorf("Expected no error but got '%s'", err)
+	if st.ExpectedM != nil || st.ExpectedError != nil {
+		res, err := st.Scraper.Scrape(st.URL)
+		if err != st.ExpectedError {
+			if st.ExpectedError == nil {
+				return errors.Errorf("Expected no error but got '%s'", err)
+			}
+			return errors.Errorf("Expected error '%s' but bot '%s'", st.ExpectedError, err)
 		}
-		return errors.Errorf("Expected error '%s' but bot '%s'", st.ExpectedError, err)
-	}
-
-	if st.ExpectedM != nil {
 		if err := expectm.CheckJSON(res, st.ExpectedM); err != nil {
 			return err
 		}

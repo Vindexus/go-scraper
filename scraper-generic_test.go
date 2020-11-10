@@ -9,7 +9,7 @@ func TestScrapeGeneric(t *testing.T) {
 	tests := CreateWantTests(scraper, []string{
 		"https://www.reddit.com/r/boardgames/comments/jn78c5/the_3_minute_board_games_top_100_games_2020/",
 		"https://google.com",
-		"https://blog.mywebsite.co.uk/posts/434324-how-do-i-shot-web",
+		"https://wordpress.org/showcase/ladybird-education/",
 		"this isn't a url",
 	})
 

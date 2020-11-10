@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Monstercat/golib/request"
+	"github.com/monstercat/golib/request"
 )
 
 var (
@@ -20,33 +20,62 @@ const (
 
 var redditUrlRegexp = "\\/comments\\/([a-zA-Z0-9]+)\\/?[[a-zA-Z0-9\\_]+?\\/([a-zA-Z0-9]+)?"
 
-type RedditPostInfo struct {
-	RedditThing
-	Title string `json:"title"`
+
+// Used as return data, can be our own structure
+type RedditThingMeta struct {
+	Author string
+	Body string
+	Created           float64
+	Id string
+	Permalink         string
+	Subreddit         string
+	SubredditPrefixed string
+	URL               string
 }
 
-type RedditCommentInfo struct {
-	RedditThing
+type RedditPostMeta struct {
+	RedditThingMeta
+	Spoiler           bool
+	Crossposts []RedditThing
+	URL string
+}
+type RedditCommentMeta struct {
+	RedditThingMeta
+	IsSubmitter bool
 }
 
-// Comment or Post
+// Comment or Posts are "things" to reddit
+// this struct has the properties that will appear in both
+// requests for Posts and requests for comments
 type RedditThing struct {
 	Author            string        `json:"author"`
 	Body              string        `json:"body"`
 	Created           float64       `json:"created"`
-	Crossposts        []RedditThing `json:"crosspost_parent_list"`
+	Id string `json:"id"` // id of comment or post
 	Permalink         string        `json:"permalink"`
 	Subreddit         string        `json:"subreddit"`
 	SubredditPrefixed string        `json:"subreddit_name_prefixed"`
-	LinkId            string        `json:"link_id"`
+}
+
+// Used to fetch data from the API, must match reddit's structure
+type RedditPostInfo struct {
+	RedditThing
+
+	// These fields are in posts, but not comments
+	Crossposts        []RedditThing `json:"crosspost_parent_list"`
 	Spoiler           bool          `json:"spoiler"`
+	Title string `json:"title"`
 	URL               string        `json:"url"`
 }
 
-// Implements ScrapeMeta
-type RedditMeta struct {
-	Subreddit string // eg: "AskReddit"
+type RedditCommentInfo struct {
+	RedditThing
+
+	// These fields are in comments, but not posts
+	IsSubmitter bool `json:"is_submitter"`
+	LinkId            string        `json:"link_id"`
 }
+
 
 type RedditScraper struct {
 	UserAgent string
@@ -77,11 +106,29 @@ func (rs *RedditScraper) Scrape(urlS string) (*ScrapeInfo, error) {
 	}
 	result := r.FindStringSubmatch(urlS)
 
+	var info *ScrapeInfo
+
+	// Reddit urls look kind of like /r/subreddit/1235234/comments when it's a link to a post
+	// and a link to a comment will append the comment id
+	// So if no second id is found, then this is a post link and we scrape a post
 	if result[2] == "" {
-		return rs.ScrapePost(result[1])
+		info, err = rs.ScrapePost(result[1])
+		if err != nil {
+			return nil, err
+		}
+
+		if IsImageLink(info.URL) {
+			info.ThumbnailSource = info.URL
+		}
+	} else {
+		info, err = rs.ScrapeComment(result[2])
+		if err != nil {
+			return nil, err
+		}
 	}
-	return nil, errors.New("do comment next")
-	return rs.ScrapeComment(result[2])
+
+	info.URL = urlS
+	return info, nil
 }
 
 func (rs *RedditScraper) ScrapePost(postId string) (*ScrapeInfo, error) {
@@ -93,19 +140,20 @@ func (rs *RedditScraper) ScrapePost(postId string) (*ScrapeInfo, error) {
 		return nil, err
 	}
 
-	item := &ScrapeInfo{
-		CreditTitle: info.Author,
-		CreditURL:   getRedditAuthorURL(info.Author),
-		Meta: &info.RedditThing,
-		SourceType: SourceRedditPost,
-		Title:       info.Title,
+
+	result := info.BasicScrapeInfo()
+	result.SourceType = SourceRedditPost
+	result.Title = info.Title
+	result.URL = info.URL
+
+	result.Meta = &RedditPostMeta{
+		Crossposts: info.Crossposts,
+		RedditThingMeta: info.RedditThing.ToMeta(),
+		Spoiler: info.Spoiler,
+		URL              : info.URL,
 	}
 
-	if IsImageLink(info.URL) {
-		item.ThumbnailSource = info.URL
-	}
-
-	return item, nil
+	return result, nil
 }
 
 func (rs *RedditScraper) ScrapeComment(postId string) (*ScrapeInfo, error) {
@@ -116,11 +164,18 @@ func (rs *RedditScraper) ScrapeComment(postId string) (*ScrapeInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ScrapeInfo{
-		Title:       "Comment by " + info.Author,
-		CreditTitle: info.Author,
-		CreditURL:   getRedditAuthorURL(info.Author),
-	}, nil
+
+
+	result := info.BasicScrapeInfo()
+	result.SourceType = SourceRedditComment
+	result.Title = "Comment by " + info.Author
+
+	result.Meta = &RedditCommentMeta{
+		RedditThingMeta: info.RedditThing.ToMeta(),
+		IsSubmitter: info.IsSubmitter,
+	}
+
+	return result, nil
 }
 
 type RedditCommentInfoResponse struct {
@@ -191,6 +246,27 @@ func (p *RedditCommentSource) GetCommentInfo(rs *RedditScraper) (*RedditCommentI
 	}
 	dat := body.Data.Children[0].Data
 	return &dat, nil
+}
+
+func (rt *RedditThing) BasicScrapeInfo() *ScrapeInfo {
+	item := &ScrapeInfo{
+		CreditTitle: rt.Author,
+		CreditURL:   getRedditAuthorURL(rt.Author),
+		SourceKey: rt.Id,
+	}
+	return item
+}
+
+func (rt *RedditThing) ToMeta() RedditThingMeta {
+	return RedditThingMeta{
+		Author: rt.Author,
+		Body: rt.Body,
+		Created: rt.Created,
+		Id: rt.Id,
+		Permalink        : rt.Permalink,
+		Subreddit        : rt.Subreddit,
+		SubredditPrefixed: rt.SubredditPrefixed,
+	}
 }
 
 func getRedditAuthorURL(username string) string {

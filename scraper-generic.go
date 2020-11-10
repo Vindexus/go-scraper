@@ -1,7 +1,6 @@
 package vinscraper
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/dyatlov/go-htmlinfo/htmlinfo"
@@ -9,6 +8,10 @@ import (
 
 type ScraperGeneric struct {
 }
+
+const (
+	SourceURL = "url"
+)
 
 // The generic one wants them all
 func (s *ScraperGeneric) WantsURL(url string) bool {
@@ -32,9 +35,10 @@ func (s *ScraperGeneric) Scrape(link string) (*ScrapeInfo, error) {
 		panic(err)
 	}
 
-	item := &ScrapeInfo{}
-
-	fmt.Println("og info imgs", info.OGInfo.Images)
+	item := &ScrapeInfo{
+		SourceType: SourceURL,
+		SourceKey: link,
+	}
 
 	if info.OGInfo != nil {
 		item.Title = info.OGInfo.Title

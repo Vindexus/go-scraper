@@ -9,6 +9,7 @@ import (
 
 var (
 	ErrNoConsumingScaper = errors.New("no scraper wanted to consume that url")
+	ErrSourceInvalidURL    = errors.New("Invalid URL provided")
 )
 
 type SourceType string
@@ -41,6 +42,7 @@ type ScrapeInfo struct {
 	CreditTitle     string
 	Description     string
 	Meta interface{}
+	SourceKey string // a unique identifier for that source type. EG: reddit thing id, youtube video id, twitch channel name
 	SourceType      SourceType
 	ThumbnailSource string
 	Title           string
@@ -70,9 +72,9 @@ func ScrapeReplace(link string, field *string, replaces []ScrapeReplacer) error 
 }
 
 func (s *Scraping) Scrape(link string) (*ScrapeInfo, error) {
-	_, err := url.Parse(link)
+	_, err := url.ParseRequestURI(link)
 	if err != nil {
-		return nil, err
+		return nil, ErrSourceInvalidURL
 	}
 
 	var item *ScrapeInfo
