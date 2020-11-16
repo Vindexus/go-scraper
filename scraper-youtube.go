@@ -3,11 +3,6 @@ package vinscraper
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/youtube/v3"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -15,10 +10,16 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/youtube/v3"
 )
 
 var (
-	ErrNoYouTubeId = errors.New("could not find video ID in link")
+	ErrNoYouTubeId   = errors.New("could not find video ID in link")
 	ErrVideoNotFound = errors.New("video not found through API")
 )
 
@@ -28,12 +29,12 @@ const (
 
 type YouTubeVideoMeta struct {
 	Duration string
-	Tags []string
+	Tags     []string
 }
 
 type YouTubeScraper struct {
 	OAuthConfig *oauth2.Config
-	OAuthToken *oauth2.Token
+	OAuthToken  *oauth2.Token
 }
 
 func LoadYouTubeScraper(configFile string, tokenFile string) (*YouTubeScraper, error) {
@@ -46,7 +47,6 @@ func LoadYouTubeScraper(configFile string, tokenFile string) (*YouTubeScraper, e
 	if err != nil {
 		return nil, err
 	}
-
 
 	f, err := os.Open(tokenFile)
 	if err != nil {
@@ -61,7 +61,7 @@ func LoadYouTubeScraper(configFile string, tokenFile string) (*YouTubeScraper, e
 
 	return &YouTubeScraper{
 		OAuthConfig: config,
-		OAuthToken: token,
+		OAuthToken:  token,
 	}, nil
 }
 
@@ -115,19 +115,19 @@ func (yt *YouTubeScraper) Scrape(link string) (*ScrapeInfo, error) {
 
 	info := &ScrapeInfo{
 		CreditTitle: snip.ChannelTitle,
-		CreditURL: fmt.Sprintf("https://www.youtube.com/channel/%s", snip.ChannelId),
+		CreditURL:   fmt.Sprintf("https://www.youtube.com/channel/%s", snip.ChannelId),
 		Description: snip.Description,
 		Meta: &YouTubeVideoMeta{
-			Duration: since.String(),
-			Tags: snip.Tags,
+			Duration: formatDuration(since),
+			Tags:     snip.Tags,
 		},
 		SourceType: SourceYouTubeVideo,
-		SourceKey: id,
-		Title: snip.Title,
+		SourceKey:  id,
+		Title:      snip.Title,
 	}
 
 	if snip.Thumbnails.Default != nil {
-		info.ThumbnailSource = snip.Thumbnails.Default.Url
+		info.ThumbnailSource = snip.Thumbnails.High.Url
 	}
 
 	return info, nil
@@ -149,6 +149,16 @@ func GetLinkYouTubeVideoId(link string) string {
 	return pieces[len(pieces)-1]
 }
 
+func formatDuration(dur time.Duration) string {
+	str := dur.String()
+	str = strings.Replace(str, "h0m", "h00m", 1)
+	str = strings.Replace(str, "m0s", "m00s", 1)
+	reg, _ := regexp.Compile("\\.[0-9]+s")
+	if reg.MatchString(str) {
+		str = reg.ReplaceAllString(str, "s")
+	}
+	return str
+}
 
 func parseDuration(str string) time.Duration {
 	durationRegex := regexp.MustCompile(`P(?P<years>\d+Y)?(?P<months>\d+M)?(?P<days>\d+D)?T?(?P<hours>\d+H)?(?P<minutes>\d+M)?(?P<seconds>\d+S)?`)
