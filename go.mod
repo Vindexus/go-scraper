@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go v0.71.0 // indirect
 	github.com/PuerkitoBio/goquery v1.6.0 // indirect
 	github.com/andybalholm/cascadia v1.2.0 // indirect
+	github.com/dghubble/go-twitter v0.0.0-20201011215211-4b180d0cc78d
 	github.com/dyatlov/go-htmlinfo v0.0.0-20180517114536-d9417c75de65
 	github.com/dyatlov/go-oembed v0.0.0-20191103150536-a57c85b3b37c // indirect
 	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8 // indirect
