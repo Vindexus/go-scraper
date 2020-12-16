@@ -43,6 +43,15 @@ func TestScrapeTwitterTweet(t *testing.T) {
 	scraper := getTestTwitterScraper(t)
 	tests := ApplyScraperTests(scraper, []*ScrapeTest{
 		{
+			URL: "https://twitter.com/GauntletRPG/status/1329107098106466310",
+			ExpectedM: &expectm.ExpectedM{
+				"Meta.Content": `Codex Flashback: Iron (April '17)
+Includes: The Gates of Cold Iron Pass, an OSR adventure; Wind on the Path, a game of samurai duels; Four Dwarven Shrines, a collection of elements for Dungeon World, and more.
+Find back issues of Codex on DTRPG:
+https://t.co/wszCC71oCU https://t.co/LVfVx8bzOm`,
+			},
+		},
+		{
 			// This has an image embed
 			URL: "https://twitter.com/Cephalofair/status/1321504060680343552",
 			ExpectedM: &expectm.ExpectedM{
