@@ -127,7 +127,7 @@ func (yt *YouTubeScraper) Scrape(link string) (*ScrapeInfo, error) {
 	}
 
 	if snip.Thumbnails.Default != nil {
-		info.ThumbnailSource = snip.Thumbnails.High.Url
+		info.ThumbnailSources = []string{snip.Thumbnails.High.Url}
 	}
 
 	return info, nil

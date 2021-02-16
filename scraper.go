@@ -44,7 +44,7 @@ type ScrapeInfo struct {
 	Meta interface{}
 	SourceKey string // a unique identifier for that source type. EG: reddit thing id, youtube video id, twitch channel name
 	SourceType      SourceType
-	ThumbnailSource string
+	ThumbnailSources []string
 	Title           string
 	URL string
 	// TODO: Add logic to consolidate URL into a StandardizedURL so that youtu.be/123 and youtube.com/watch?v=123 and www.youtube.com/watch?v=123 all

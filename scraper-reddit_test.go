@@ -1,7 +1,10 @@
 package vinscraper
 
 import (
+	"errors"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/monstercat/golib/expectm"
@@ -34,6 +37,19 @@ func TestScrapeRedditWants(t *testing.T) {
 	}
 }
 
+func ExpectContains(finds ...string) func(val interface{}) error {
+	return func(val interface{}) error {
+		for _, find := range finds {
+			s := fmt.Sprintf("%s", val)
+			if !strings.Contains(s, find) {
+				return errors.New(fmt.Sprintf(`string does not contain "%s" in '%s'`, find, s))
+
+			}
+		}
+		return nil
+	}
+}
+
 func TestScrapeRedditPost(t *testing.T) {
 	scraper := getTestRedditScraper(t)
 	tests := ApplyScraperTests(scraper, []*ScrapeTest{
@@ -53,8 +69,19 @@ func TestScrapeRedditPost(t *testing.T) {
 			ExpectedM: &expectm.ExpectedM{
 				"SourceKey":              "jo26nf",
 				"SourceType":             "reddit_post",
-				"ThumbnailSource":        "https://i.redd.it/tjvedcdip9x51.jpg",
+				"ThumbnailSources.0":     "https://i.redd.it/tjvedcdip9x51.jpg",
 				"Meta.SubredditPrefixed": "r/wholesomememes",
+			},
+		},
+		{
+			// Album with 7 images
+			URL: "https://www.reddit.com/r/Warhammer40k/comments/lki67h/some_tau_this_time_ghostkeel_leaving_its_stealth/",
+			ExpectedM: &expectm.ExpectedM{
+				"SourceType":             "reddit_post",
+				"ThumbnailSources.#":     8,
+				"Meta.SubredditPrefixed": "r/Warhammer40k",
+				"ThumbnailSources.0":     ExpectContains("4dvn70o8doh61.jpg"),
+				"ThumbnailSources.7":     ExpectContains("j61kr1n9doh61.jpg"),
 			},
 		},
 	})

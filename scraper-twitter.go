@@ -125,12 +125,12 @@ func (ts *TwitterScraper) Scrape(link string) (*ScrapeInfo, error) {
 	avatar = strings.Replace(avatar, "_normal.", ".", 1)
 
 	info := &ScrapeInfo{
-		CreditTitle:     tweet.User.ScreenName,
-		CreditURL:       fmt.Sprintf("https://twitter.com/%s", tweet.User.ScreenName),
-		SourceKey:       fmt.Sprintf("%d", id),
-		SourceType:      SourceTwitterTweet,
-		Title:           `Tweet by ` + tweet.User.ScreenName,
-		ThumbnailSource: thumbnail,
+		CreditTitle:      tweet.User.ScreenName,
+		CreditURL:        fmt.Sprintf("https://twitter.com/%s", tweet.User.ScreenName),
+		SourceKey:        fmt.Sprintf("%d", id),
+		SourceType:       SourceTwitterTweet,
+		Title:            `Tweet by ` + tweet.User.ScreenName,
+		ThumbnailSources: []string{thumbnail},
 		Meta: &TwitterTweetMeta{
 			AuthorScreenName: tweet.User.ScreenName,
 			AuthorName:       tweet.User.Name,

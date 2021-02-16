@@ -36,15 +36,16 @@ func (s *ScraperGeneric) Scrape(link string) (*ScrapeInfo, error) {
 	}
 
 	item := &ScrapeInfo{
-		SourceType: SourceURL,
-		SourceKey: link,
+		SourceType:       SourceURL,
+		SourceKey:        link,
+		ThumbnailSources: make([]string, 0),
 	}
 
 	if info.OGInfo != nil {
 		item.Title = info.OGInfo.Title
 		item.Description = info.OGInfo.Description
 		if len(info.OGInfo.Images) > 0 {
-			item.ThumbnailSource = info.OGInfo.Images[0].URL
+			item.ThumbnailSources = []string{info.OGInfo.Images[0].URL}
 		}
 	}
 
@@ -61,7 +62,7 @@ func (s *ScraperGeneric) Scrape(link string) (*ScrapeInfo, error) {
 	}
 
 	if info.ImageSrcURL != "" {
-		item.ThumbnailSource = info.ImageSrcURL
+		item.ThumbnailSources = []string{info.ImageSrcURL}
 	}
 
 	return item, nil

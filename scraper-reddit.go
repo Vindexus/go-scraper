@@ -64,12 +64,20 @@ type RedditThing struct {
 	SubredditPrefixed string  `json:"subreddit_name_prefixed"`
 }
 
+type RedditGalleryData struct {
+	Items []struct {
+		Id      int    `json:"id"`
+		MediaId string `json:"media_id"`
+	} `json:"items"`
+}
+
 // Used to fetch data from the API, must match reddit's structure
 type RedditPostInfo struct {
 	RedditThing
 
 	// These fields are in posts, but not comments
 	Crossposts    []RedditThing                  `json:"crosspost_parent_list"`
+	GalleryData   RedditGalleryData              `json:"gallery_data"`
 	MediaMetadata map[string]RedditMediaMetadata `json:"media_metadata"`
 	Spoiler       bool                           `json:"spoiler"`
 	Title         string                         `json:"title"`
@@ -125,7 +133,7 @@ func (rs *RedditScraper) Scrape(urlS string) (*ScrapeInfo, error) {
 		}
 
 		if IsImageLink(info.URL) {
-			info.ThumbnailSource = info.URL
+			info.ThumbnailSources = []string{info.URL}
 		}
 	} else {
 		info, err = rs.ScrapeComment(result[2])
@@ -159,14 +167,28 @@ func (rs *RedditScraper) ScrapePost(postId string) (*ScrapeInfo, error) {
 		URL:             info.URL,
 	}
 
+	result.ThumbnailSources = make([]string, 0)
 	// If metadata has items in it then this reddit post is a gallery
 	if len(info.MediaMetadata) > 0 {
-		for _, v := range info.MediaMetadata {
-			result.ThumbnailSource = v.Source.URL
+		mediaThumbs := map[string]string{}
 
+		// This data is always sorted randomly
+		// Golang automatically randomizes JSON key order because the order
+		// can't be guaranteed
+		for k, v := range info.MediaMetadata {
+			thumb := strings.ReplaceAll(v.Source.URL, "&amp;", "&")
+			mediaThumbs[k] = thumb
 			// For some reason reddit does this encoding to their URL params
-			result.ThumbnailSource = strings.ReplaceAll(result.ThumbnailSource, "&amp;", "&")
-			break
+		}
+
+		// The gallery data IS in order, however
+		for _, v := range info.GalleryData.Items {
+			thumb, ok := mediaThumbs[v.MediaId]
+			if ok {
+				result.ThumbnailSources = append(result.ThumbnailSources, thumb)
+			} else {
+				return nil, errors.New("could not find media from gallery with id: " + v.MediaId)
+			}
 		}
 	}
 
