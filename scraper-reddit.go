@@ -18,7 +18,7 @@ const (
 	SourceRedditComment = "reddit_comment"
 )
 
-var redditUrlRegexp = "\\/comments\\/([a-zA-Z0-9]+)\\/?[[a-zA-Z0-9\\_]+?\\/([a-zA-Z0-9]+)?"
+var redditUrlRegexp = "\\/comments\\/([%a-zA-Z0-9]+)\\/?[[%a-zA-Z0-9\\_]+?\\/([%a-zA-Z0-9]+)?"
 
 // Used as return data, can be our own structure
 type RedditThingMeta struct {
